@@ -1,8 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import { errorHandler } from "./middlewares/errorHandler";
-import { initDatabase } from './utils/DatabaseService';
+import { initDatabase } from './utils/databaseService';
 import { setupAssociations } from './models/associations';
+import userRouter from "./routes/userRouter";
+import authRouter from "./routes/authRouter";
+import roleRouter from "./routes/roleRouter";
 dotenv.config();
 
 
@@ -11,7 +15,14 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 
+app.use(cors());
 app.use(express.json());
+app.use(errorHandler);
+
+
+app.use("/api/users", userRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/roles", roleRouter);
 
 
 
