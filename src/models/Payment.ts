@@ -3,7 +3,7 @@ import sequelize from "../utils/databaseService";
 
 interface PaymentAttributes {
   id: number;
-  userId: number;            // <- INT ahora
+  userId: number;            
   datePayments: string;
   endDatePayments: string;
   price: number;
@@ -18,7 +18,7 @@ export interface PaymentCreationAttributes
 export class Payment extends Model<PaymentAttributes, PaymentCreationAttributes>
   implements PaymentAttributes {
   public id!: number;
-  public userId!: number;    // <- INT
+  public userId!: number;    
   public datePayments!: string;
   public endDatePayments!: string;
   public price!: number;
@@ -36,7 +36,7 @@ Payment.init(
       primaryKey: true,
     },
     userId: {
-      type: DataTypes.INTEGER.UNSIGNED,   // <- cambiado de UUID a INT
+      type: DataTypes.INTEGER.UNSIGNED,  
       allowNull: false,
     },
     datePayments: {

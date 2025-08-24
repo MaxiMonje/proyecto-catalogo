@@ -1,13 +1,17 @@
 import sequelize from "../utils/databaseService";
 import seedUsers from "./userSeeder";
 import seedRoles from "./roleSeeder";
+import seedForm from "./formSeeder";
+import seedPayment from "./paymentSeeder";
 
 
 const seed = async () => {
   try {
     await sequelize.sync({ force: true }); // Limpia y vuelve a crear las tablas
-    await seedRoles(); 
+    await seedRoles();
     await seedUsers();
+    await seedPayment();
+    await seedForm();
    
     console.log("✅ Seed completado exitosamente");
     process.exit(0);

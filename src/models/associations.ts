@@ -1,6 +1,7 @@
 import { User } from "./User";
 import { Role } from "./Role";
 import { Payment } from "./Payment";
+import { Form } from "./Form";
 
 export const setupAssociations = () => { 
 
@@ -11,4 +12,10 @@ export const setupAssociations = () => {
    // User - Payment 
   User.hasMany(Payment, { foreignKey: "userId", as: "payments" });
   Payment.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+  // User - Form
+  User.hasMany(Form, { foreignKey: "userId", as: "forms" });
+  Form.belongsTo(User, { foreignKey: "userId", as: "user" });
+  
+  
 };
