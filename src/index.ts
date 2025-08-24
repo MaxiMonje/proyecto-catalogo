@@ -7,6 +7,7 @@ import { setupAssociations } from './models/associations';
 import userRouter from "./routes/userRouter";
 import authRouter from "./routes/authRouter";
 import roleRouter from "./routes/roleRouter";
+import paymentRouter from "./routes/paymentRouter";
 dotenv.config();
 
 
@@ -23,6 +24,7 @@ app.use(errorHandler);
 app.use("/api/users", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/roles", roleRouter);
+app.use("/api/payments", paymentRouter);
 
 
 
