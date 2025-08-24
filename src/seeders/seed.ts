@@ -3,6 +3,7 @@ import seedUsers from "./userSeeder";
 import seedRoles from "./roleSeeder";
 import seedForm from "./formSeeder";
 import seedPayment from "./paymentSeeder";
+import seedImage from "./imageSeeder";
 
 
 const seed = async () => {
@@ -12,6 +13,7 @@ const seed = async () => {
     await seedUsers();
     await seedPayment();
     await seedForm();
+    await seedImage();
    
     console.log("✅ Seed completado exitosamente");
     process.exit(0);

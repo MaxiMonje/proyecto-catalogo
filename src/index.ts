@@ -9,6 +9,7 @@ import authRouter from "./routes/authRouter";
 import roleRouter from "./routes/roleRouter";
 import paymentRouter from "./routes/paymentRouter";
 import formRouter from "./routes/formRouter";
+import imageRouter from "./routes/imageRouter";
 dotenv.config();
 
 
@@ -27,6 +28,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/roles", roleRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/forms", formRouter);
+app.use("/api/images", imageRouter);
 
 
 
