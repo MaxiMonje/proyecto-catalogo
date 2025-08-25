@@ -2,8 +2,8 @@ import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../utils/databaseService";
 import argon2 from "argon2";
 
-interface UserAttributes {
-  id: number;              // <- INT ahora
+export interface UserAttributes {
+  id: number;
   name: string;
   lastName: string;
   email: string;
@@ -11,7 +11,7 @@ interface UserAttributes {
   roleId: number;
   active: boolean;
   passwordHash: string;
-  password?: string;       // virtual
+  password?: string; // virtual
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,7 +22,7 @@ export interface UserCreationAttributes
 }
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-  public id!: number;      // <- INT
+  public id!: number;
   public name!: string;
   public lastName!: string;
   public email!: string;
@@ -50,8 +50,8 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
 User.init(
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,   // <- INT
-      autoIncrement: true,                // <- AUTOINCREMENT
+      type: DataTypes.INTEGER.UNSIGNED,
+      autoIncrement: true,
       primaryKey: true,
     },
     name: { type: DataTypes.STRING, allowNull: false },
@@ -61,8 +61,10 @@ User.init(
     roleId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
 
+    // Campo virtual (no persiste), usado para recibir la contraseña en requests/seeders
     password: { type: DataTypes.VIRTUAL, validate: { len: [8, 16] } },
 
+    // Hash persistido (NOT NULL)
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
   },
   {
@@ -72,18 +74,25 @@ User.init(
     timestamps: true,
     defaultScope: { attributes: { exclude: ["passwordHash"] } },
     hooks: {
-      beforeCreate: async (user: User) => {
-        if (!user.password || user.password.length < 8 || user.password.length > 16) {
-          throw new Error("Password must be between 8 and 16 characters.");
-        }
-        user.passwordHash = await argon2.hash(user.password);
-      },
-      beforeUpdate: async (user: User) => {
-        if (user.password) {
+      // Hasheamos ANTES de validar para evitar "notNull Violation: passwordHash"
+      beforeValidate: async (user: User) => {
+        // CREATE: password obligatoria
+        if (user.isNewRecord) {
+          if (!user.password) {
+            throw new Error("Password is required");
+          }
           if (user.password.length < 8 || user.password.length > 16) {
             throw new Error("Password must be between 8 and 16 characters.");
           }
           user.passwordHash = await argon2.hash(user.password);
+        } else {
+          // UPDATE: solo si viene password; si no viene, dejamos el hash actual
+          if (typeof user.password === "string" && user.password.length > 0) {
+            if (user.password.length < 8 || user.password.length > 16) {
+              throw new Error("Password must be between 8 and 16 characters.");
+            }
+            user.passwordHash = await argon2.hash(user.password);
+          }
         }
       },
     },
