@@ -1,6 +1,7 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../utils/databaseService";
 import argon2 from "argon2";
+import { attachDbLengthValidator } from "../utils/lengthValidator";
 
 export interface UserAttributes {
   id: number;
@@ -11,17 +12,20 @@ export interface UserAttributes {
   roleId: number;
   active: boolean;
   passwordHash: string;
-  password?: string; // virtual
+  password?: string; // virtual: viene en requests/seeders, no se persiste
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface UserCreationAttributes
   extends Optional<UserAttributes, "id" | "active" | "createdAt" | "updatedAt" | "passwordHash"> {
-  password: string; // requerido al crear
+  password: string; // requerido para crear
 }
 
-export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+export class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
+{
   public id!: number;
   public name!: string;
   public lastName!: string;
@@ -56,13 +60,28 @@ User.init(
     },
     name: { type: DataTypes.STRING, allowNull: false },
     lastName: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
+
+    // ÚNICO a nivel BD -> garantiza 409 si colisiona
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true, // si querés permitir reusar email con soft-delete, ver nota abajo
+      validate: { isEmail: true },
+    },
+
     cel: { type: DataTypes.STRING, allowNull: false },
     roleId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
 
-    // Campo virtual (no persiste), usado para recibir la contraseña en requests/seeders
-    password: { type: DataTypes.VIRTUAL, validate: { len: [8, 16] } },
+    // Campo virtual para recibir la contraseña (no se guarda)
+    password: {
+      type: DataTypes.VIRTUAL,
+      set(value: string) {
+        const trimmed = typeof value === "string" ? value.trim() : value;
+        (this as any).setDataValue("password", trimmed);
+      },
+      validate: { len: [8, 16] },
+    },
 
     // Hash persistido (NOT NULL)
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
@@ -72,29 +91,55 @@ User.init(
     modelName: "User",
     tableName: "users",
     timestamps: true,
+
+    // ocultamos el hash por default
     defaultScope: { attributes: { exclude: ["passwordHash"] } },
+    // y un scope explícito para traer el hash cuando haga falta (auth)
+    scopes: {
+      withHash: { attributes: { include: ["passwordHash"] } },
+    },
+
     hooks: {
-      // Hasheamos ANTES de validar para evitar "notNull Violation: passwordHash"
-      beforeValidate: async (user: User) => {
+      // punto único de verdad: normaliza email, valida y hashea cuando corresponda
+      async beforeSave(user: User) {
+        // Normalizar email SIEMPRE
+        if (typeof user.email === "string") {
+          user.email = user.email.trim().toLowerCase();
+        }
+
         // CREATE: password obligatoria
         if (user.isNewRecord) {
-          if (!user.password) {
-            throw new Error("Password is required");
-          }
-          if (user.password.length < 8 || user.password.length > 16) {
+          const pwd = (user.password ?? "").trim();
+          if (!pwd) throw new Error("Password is required");
+          if (pwd.length < 8 || pwd.length > 16) {
             throw new Error("Password must be between 8 and 16 characters.");
           }
-          user.passwordHash = await argon2.hash(user.password);
-        } else {
-          // UPDATE: solo si viene password; si no viene, dejamos el hash actual
-          if (typeof user.password === "string" && user.password.length > 0) {
-            if (user.password.length < 8 || user.password.length > 16) {
-              throw new Error("Password must be between 8 and 16 characters.");
-            }
-            user.passwordHash = await argon2.hash(user.password);
+          user.passwordHash = await argon2.hash(pwd);
+          return;
+        }
+
+        // UPDATE: solo si vino password (y no queda vacía tras TRIM)
+        if (typeof user.password === "string") {
+          const pwd = user.password.trim();
+          if (pwd.length === 0) {
+            // Mandaron "" o solo espacios -> NO tocar el hash
+            (user as any).password = undefined;
+            return;
           }
+          if (pwd.length < 8 || pwd.length > 16) {
+            throw new Error("Password must be between 8 and 16 characters.");
+          }
+          user.passwordHash = await argon2.hash(pwd);
         }
       },
     },
+
+    // Si querés permitir reusar un email cuando el usuario anterior quedó inactivo, en vez de `unique: true` arriba:
+    // indexes: [
+    //   { name: "uniq_users_email_active", unique: true, fields: ["email", "active"] },
+    // ],
   }
 );
+
+attachDbLengthValidator(User as any, "users");
+export default User;

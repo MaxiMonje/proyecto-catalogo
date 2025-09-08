@@ -1,8 +1,8 @@
+// middlewares/isAuthenticated.ts
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import dotenv from "dotenv";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+const JWT_SECRET: Secret = process.env.JWT_SECRET ?? "super_secret_key";
 
 declare module "express-serve-static-core" {
   interface Request {

@@ -1,3 +1,4 @@
+// seeders/seedUser.ts
 import { User } from "../models/User";
 
 const seedUser = async () => {
