@@ -10,8 +10,8 @@ import roleRouter from "./routes/roleRouter";
 import paymentRouter from "./routes/paymentRouter";
 import formRouter from "./routes/formRouter";
 import imageRouter from "./routes/imageRouter";
+import path from "path";
 dotenv.config();
-
 
 
 const app = express();
@@ -21,6 +21,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(errorHandler);
+app.use("/static/images", express.static(path.join(process.cwd(), "uploads", "images")));
 
 
 app.use("/api/users", userRouter);

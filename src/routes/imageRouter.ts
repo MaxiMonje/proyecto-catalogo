@@ -1,21 +1,25 @@
+// routes/image.routes.ts
 import { Router } from "express";
 import {
-  getAllImages,
-  getImageById,
-  createImage,
-  updateImage,
-  deleteImage
+  getAllImages, getImageById, createImage, updateImage, deleteImage, getPrimaryByForm
 } from "../controllers/imageController";
-import { validate } from "../middlewares/validate";
-import { createImageSchema, updateImageSchema } from "../validations/image.validation";
-// import { isAuthenticated } from "../middlewares/isAuthenticated";
+import { uploadImageMw } from "../middlewares/upload";
+import { uploadAndCreateImage } from "../controllers/imageUploadController";
 
 const router = Router();
 
-router.get("/", /* isAuthenticated, */ getAllImages);
-router.get("/:id", /* isAuthenticated, */ getImageById);
-router.post("/", /* isAuthenticated, */ validate(createImageSchema), createImage);
-router.put("/:id", /* isAuthenticated, */ validate(updateImageSchema), updateImage);
-router.delete("/:id", /* isAuthenticated, */ deleteImage);
+// Listado con filtros/paginación (opcional)
+router.get("/", getAllImages);
+router.get("/:id", getImageById);
+router.get("/form/:formId/primary", getPrimaryByForm);
+
+// Crear con JSON tradicional (url ya existente)
+router.post("/", createImage);
+
+// Crear subiendo archivo (multipart/form-data)
+router.post("/upload", uploadImageMw, uploadAndCreateImage);
+
+router.put("/:id", updateImage);
+router.delete("/:id", deleteImage);
 
 export default router;
